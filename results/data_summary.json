@@ -1,0 +1,68 @@
+{
+  "source_dataset": "PaySim raw source",
+  "source_path": "data/raw/PS_20174392719_1491204439457_log.csv",
+  "source_rows": 6362620,
+  "source_fraud_rows": 8213,
+  "source_nonfraud_rows": 6354407,
+  "source_fraud_rate": 0.001290820448180152,
+  "type_counts": {
+    "CASH_IN": 1399284,
+    "CASH_OUT": 2237500,
+    "DEBIT": 41432,
+    "PAYMENT": 2151495,
+    "TRANSFER": 532909
+  },
+  "missing_counts": {},
+  "time_min": 1,
+  "time_max": 743,
+  "amount_min": 0.0,
+  "amount_max": 92445516.64,
+  "raw_source_available": true,
+  "sampling_method": "Full PaySim source; no source-level row sampling.",
+  "working_path": "data/sample/data.csv",
+  "working_rows": 325934,
+  "working_fraud_rows": 8213,
+  "working_nonfraud_rows": 317721,
+  "working_fraud_rate": 0.025198353040799672,
+  "working_sampling_method": "All fraud retained; approximately 5% of source non-fraud sampled with seed 42.",
+  "split_definition": {
+    "source_path": "data/raw/PS_20174392719_1491204439457_log.csv",
+    "train_end_step": 500,
+    "validation_end_step": 600,
+    "source_raw_available": true,
+    "threshold_selection_split": "validation",
+    "final_evaluation_split": "test",
+    "splits": [
+      {
+        "split": "train",
+        "rows": 308373,
+        "fraud": 5561,
+        "non_fraud": 302812,
+        "fraud_rate": 0.018033355708833135,
+        "min_step": 1,
+        "max_step": 500,
+        "sampling_method": "All fraud + 5.00% of train-period non-fraud, seed=42."
+      },
+      {
+        "split": "validation",
+        "rows": 197240,
+        "fraud": 1052,
+        "non_fraud": 196188,
+        "fraud_rate": 0.005333603731494625,
+        "min_step": 501,
+        "max_step": 600,
+        "sampling_method": "Natural source prevalence; untouched for model selection/evaluation."
+      },
+      {
+        "split": "test",
+        "rows": 103573,
+        "fraud": 1600,
+        "non_fraud": 101973,
+        "fraud_rate": 0.015448041477991368,
+        "min_step": 601,
+        "max_step": 743,
+        "sampling_method": "Natural source prevalence; untouched for model selection/evaluation."
+      }
+    ]
+  }
+}

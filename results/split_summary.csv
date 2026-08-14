@@ -1,0 +1,4 @@
+split,rows,fraud,non_fraud,fraud_rate,min_step,max_step,sampling_method
+train,308373,5561,302812,0.018033355708833135,1,500,"All fraud + 5.00% of train-period non-fraud, seed=42."
+validation,197240,1052,196188,0.005333603731494625,501,600,Natural source prevalence; untouched for model selection/evaluation.
+test,103573,1600,101973,0.015448041477991368,601,743,Natural source prevalence; untouched for model selection/evaluation.

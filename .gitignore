@@ -38,10 +38,16 @@ Thumbs.db
 *.swo
 *.log
 
-# Large raw dataset (GitHub's single-file limit is 100 MB)
+# Raw datasets stay local; the tracked sample is under data/sample/.
+data/raw/
 1 data/PS_20174392719_1491204439457_log.csv
 
 # Reproducible intermediate data and prediction exports
-1 data/processed/
+data/processed/
 6 predict/prediction_output.csv
 6 predict/data_cut_predict.csv
+legacy/outputs/
+models/canonical/
+results/predictions.csv
+results/feature_importance_*_*.csv
+results/validation_metrics.csv

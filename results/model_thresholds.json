@@ -1,0 +1,94 @@
+{
+  "thresholds_selected_on": "validation",
+  "selection_criterion": "max_f1",
+  "models": {
+    "pre_transaction/logistic_regression": {
+      "feature_set": "pre_transaction",
+      "model": "logistic_regression",
+      "threshold": 0.975,
+      "selection_split": "validation",
+      "selection_criterion": "max_f1",
+      "validation_f1": 0.6717713118938233
+    },
+    "pre_transaction/random_forest": {
+      "feature_set": "pre_transaction",
+      "model": "random_forest",
+      "threshold": 0.885,
+      "selection_split": "validation",
+      "selection_criterion": "max_f1",
+      "validation_f1": 0.9985734664764622
+    },
+    "pre_transaction/xgboost": {
+      "feature_set": "pre_transaction",
+      "model": "xgboost",
+      "threshold": 0.99,
+      "selection_split": "validation",
+      "selection_criterion": "max_f1",
+      "validation_f1": 0.9840972871842844
+    },
+    "post_transaction/logistic_regression": {
+      "feature_set": "post_transaction",
+      "model": "logistic_regression",
+      "threshold": 0.985,
+      "selection_split": "validation",
+      "selection_criterion": "max_f1",
+      "validation_f1": 0.8120531154239019
+    },
+    "post_transaction/random_forest": {
+      "feature_set": "post_transaction",
+      "model": "random_forest",
+      "threshold": 0.6950000000000001,
+      "selection_split": "validation",
+      "selection_criterion": "max_f1",
+      "validation_f1": 0.9995244888254874
+    },
+    "post_transaction/xgboost": {
+      "feature_set": "post_transaction",
+      "model": "xgboost",
+      "threshold": 0.08,
+      "selection_split": "validation",
+      "selection_criterion": "max_f1",
+      "validation_f1": 0.9985748218527316
+    }
+  },
+  "split_summary": {
+    "source_path": "data/raw/PS_20174392719_1491204439457_log.csv",
+    "train_end_step": 500,
+    "validation_end_step": 600,
+    "source_raw_available": true,
+    "threshold_selection_split": "validation",
+    "final_evaluation_split": "test",
+    "splits": [
+      {
+        "split": "train",
+        "rows": 308373,
+        "fraud": 5561,
+        "non_fraud": 302812,
+        "fraud_rate": 0.018033355708833135,
+        "min_step": 1,
+        "max_step": 500,
+        "sampling_method": "All fraud + 5.00% of train-period non-fraud, seed=42."
+      },
+      {
+        "split": "validation",
+        "rows": 197240,
+        "fraud": 1052,
+        "non_fraud": 196188,
+        "fraud_rate": 0.005333603731494625,
+        "min_step": 501,
+        "max_step": 600,
+        "sampling_method": "Natural source prevalence; untouched for model selection/evaluation."
+      },
+      {
+        "split": "test",
+        "rows": 103573,
+        "fraud": 1600,
+        "non_fraud": 101973,
+        "fraud_rate": 0.015448041477991368,
+        "min_step": 601,
+        "max_step": 743,
+        "sampling_method": "Natural source prevalence; untouched for model selection/evaluation."
+      }
+    ]
+  }
+}
