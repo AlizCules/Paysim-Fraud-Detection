@@ -29,7 +29,7 @@ def project_root() -> Path:
 
 
 def resolve_dataset_path(path: str | Path | None = None) -> Path:
-    """Prefer the full local PaySim source, otherwise use the tracked sample."""
+    """Resolve an explicitly supplied or locally downloaded PaySim source."""
 
     if path is not None:
         candidate = Path(path)
@@ -38,16 +38,13 @@ def resolve_dataset_path(path: str | Path | None = None) -> Path:
         return candidate
 
     root = project_root()
-    candidates = [
-        root / "data" / "raw" / RAW_FILENAME,
-        root / "data" / "sample" / "data.csv",
-    ]
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate
+    candidate = root / "data" / "raw" / RAW_FILENAME
+    if candidate.exists():
+        return candidate
     raise FileNotFoundError(
-        "No dataset found. Place the raw PaySim CSV under data/raw/ or the "
-        "tracked working sample under data/sample/."
+        "PaySim data is not distributed with this repository. Download a "
+        "permitted copy from the documented source and place it under "
+        f"data/raw/{RAW_FILENAME}."
     )
 
 

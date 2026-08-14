@@ -8,7 +8,7 @@ An end-to-end analysis of simulated mobile-money transactions using EDA, SQL, le
 | --- | ---: |
 | Source transactions | 6,362,620 |
 | Source fraud prevalence | 0.12908% |
-| Tracked working sample | 325,934 rows |
+| Row-level data distribution | Not included in the current tree |
 | Final chronological test | 103,573 transactions |
 | Best canonical post-transaction F1 | 0.9997 — validation-selected Random Forest, final chronological test |
 
@@ -18,19 +18,21 @@ How well can transaction-level information in the PaySim simulation distinguish 
 
 ## Data Source and Scope
 
-The project uses the simulated [PaySim dataset](https://www.kaggle.com/datasets/ealaxi/paysim1). The full raw CSV is intentionally kept outside Git because it is approximately 470 MB. The tracked working sample retains all fraud rows and approximately 5% of source non-fraud rows for practical development. See [`data/README.md`](data/README.md), [`docs/data_sources.md`](docs/data_sources.md), and [`docs/limitations.md`](docs/limitations.md).
+The project uses the simulated [PaySim dataset](https://www.kaggle.com/datasets/ealaxi/paysim1). PaySim row-level data is not distributed with this repository: the approximately 470 MB raw CSV must be obtained from a permitted source copy and kept locally outside Git. See [`data/README.md`](data/README.md), [`docs/data_sources.md`](docs/data_sources.md), and [`docs/limitations.md`](docs/limitations.md).
 
 The official portfolio scope is **post-transaction monitoring** because it uses `newbalanceOrig` and `newbalanceDest`. The pre-transaction feature set is a screening comparison only; neither scope is presented as real-time prevention or pre-authorization prevention.
 
 ## Data Preparation
 
-When the raw source is available, the split is chronological:
+When the permitted raw source is available locally, the split is chronological:
 
 - train: `step <= 500`;
 - validation: `501 <= step <= 600`;
 - final test: `step > 600`.
 
 Negative-class downsampling occurs only in train. Validation and test retain natural source prevalence and are not downsampled. The canonical run records the split facts in [`results/data_summary.json`](results/data_summary.json) and [`results/split_summary.csv`](results/split_summary.csv).
+
+The aggregate artifacts in this repository were generated from a local full source before the current-tree data cleanup. The pipeline requires the local raw file and does not silently fall back to a tracked sample.
 
 ## Exploratory Fraud Analysis
 
@@ -96,7 +98,7 @@ Exported tables are available under [`results/sql/`](results/sql/).
 ## Repository Structure
 
 ```text
-data/       raw-source instructions and tracked sample
+data/       raw-source instructions; no row-level data is distributed
 src/        data, features, models, and evaluation modules
 scripts/    preparation, training, evaluation, figures, SQL, and scoring CLIs
 sql/        DuckDB analysis queries
@@ -117,7 +119,7 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 
-# Place a permitted PaySim source copy at data/raw/ when available.
+# Place a permitted PaySim source copy at data/raw/ first.
 python run_pipeline.py prepare
 python run_pipeline.py train
 python run_pipeline.py evaluate
@@ -125,11 +127,11 @@ python run_pipeline.py figures
 python run_pipeline.py sql
 ```
 
-If the raw source is unavailable, the pipeline falls back to `data/sample/data.csv` and records that limitation in `results/data_summary.json`.
+If the raw source is unavailable, the pipeline stops with an explicit message explaining where to place the permitted file.
 
 ## Limitations
 
-PaySim is simulated data, not real bank transaction data. Simulator-specific patterns can make classification unusually easy. The models have not been validated on real financial transactions, no calibrated probability or financial-loss ground truth is claimed, and the validation-F1 threshold is not an operational cost policy. Dataset redistribution/license status has not been independently verified, so the raw file remains local and the repository remains private.
+PaySim is simulated data, not real bank transaction data. Simulator-specific patterns can make classification unusually easy. The models have not been validated on real financial transactions, no calibrated probability or financial-loss ground truth is claimed, and the validation-F1 threshold is not an operational cost policy. Row-level dataset redistribution remains unverified, so the raw file, former working sample, and transaction-level prediction exports are excluded from the current tree. Earlier private history is not rewritten or represented as erased.
 
 ## Project Context and Attribution
 

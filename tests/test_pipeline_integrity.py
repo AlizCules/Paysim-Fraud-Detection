@@ -5,7 +5,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
+from src import data as data_module
 from src.data import REQUIRED_COLUMNS, build_time_splits, downsample_training_negatives
 from src.evaluation import calculate_metrics
 from src.features import FEATURE_SETS, make_feature_frame
@@ -94,6 +96,20 @@ def test_source_columns_are_explicit() -> None:
     assert "isFlaggedFraud" in REQUIRED_COLUMNS
 
 
+def test_missing_default_source_has_explicit_message(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(data_module, "project_root", lambda: tmp_path)
+    with pytest.raises(FileNotFoundError, match="PaySim data is not distributed"):
+        data_module.resolve_dataset_path()
+
+
+def test_current_tree_excludes_row_level_exports() -> None:
+    assert (ROOT / "data" / "sample" / "README.md").exists()
+    assert not (ROOT / "data" / "sample" / "data.csv").exists()
+    assert not (ROOT / "results" / "predictions.csv").exists()
+    assert not (ROOT / "legacy" / "outputs" / "data_cut_predict_legacy.csv").exists()
+    assert not (ROOT / "legacy" / "outputs" / "prediction_output_legacy.csv").exists()
+
+
 def test_tracked_methodology_artifacts_guard_protocol() -> None:
     thresholds = json.loads((ROOT / "results" / "model_thresholds.json").read_text(encoding="utf-8"))
     selected = json.loads((ROOT / "results" / "selected_model.json").read_text(encoding="utf-8"))
@@ -126,6 +142,9 @@ def test_readme_and_recruiter_files_are_portfolio_safe() -> None:
     assert "103,573" in readme
     assert f"{selected_test['f1']:.4f}" in readme
     assert selected["model"].replace("_", " ").title() in readme
+    assert "data/sample/data.csv" not in readme
+    assert "falls back" not in readme
+    assert "not distributed" in readme
     for figure in [
         "fraud_prevalence.png",
         "fraud_by_type.png",

@@ -38,14 +38,12 @@ Thumbs.db
 *.swo
 *.log
 
-# Raw datasets stay local; the tracked sample is under data/sample/.
+# Raw and row-level datasets stay local; data/sample contains instructions only.
 data/raw/
-1 data/PS_20174392719_1491204439457_log.csv
+data/sample/*.csv
 
 # Reproducible intermediate data and prediction exports
 data/processed/
-6 predict/prediction_output.csv
-6 predict/data_cut_predict.csv
 legacy/outputs/
 models/canonical/
 results/predictions.csv

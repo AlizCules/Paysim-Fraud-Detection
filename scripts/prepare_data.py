@@ -29,12 +29,6 @@ def main(argv: list[str] | None = None) -> None:
     source_path = resolve_dataset_path(args.source)
     source_summary = summarize_dataset(source_path)
 
-    sample_path = root / "data" / "sample" / "data.csv"
-    if sample_path.exists() and sample_path.resolve() != source_path.resolve():
-        working_summary = summarize_dataset(sample_path)
-    else:
-        working_summary = source_summary.copy()
-
     _, split_summary = build_time_splits(
         source_path,
         train_end=args.train_end,
@@ -44,16 +38,12 @@ def main(argv: list[str] | None = None) -> None:
     )
     canonical = {
         **source_summary,
-        "working_path": working_summary["source_path"],
-        "working_rows": working_summary["source_rows"],
-        "working_fraud_rows": working_summary["source_fraud_rows"],
-        "working_nonfraud_rows": working_summary["source_nonfraud_rows"],
-        "working_fraud_rate": working_summary["source_fraud_rate"],
-        "working_sampling_method": (
-            "All fraud retained; approximately 5% of source non-fraud sampled with seed 42."
-            if source_summary["raw_source_available"]
-            else working_summary["sampling_method"]
-        ),
+        "working_path": source_summary["source_path"],
+        "working_rows": source_summary["source_rows"],
+        "working_fraud_rows": source_summary["source_fraud_rows"],
+        "working_nonfraud_rows": source_summary["source_nonfraud_rows"],
+        "working_fraud_rate": source_summary["source_fraud_rate"],
+        "working_sampling_method": "No tracked working sample; raw source used directly.",
         "split_definition": split_summary,
     }
     (output_dir / "data_summary.json").write_text(
