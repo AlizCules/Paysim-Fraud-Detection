@@ -1,0 +1,47 @@
+# Python environments and caches
+.venv/
+venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter temporary files
+.ipynb_checkpoints/
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+secrets.json
+
+# IDE and operating-system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Temporary and generated files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*.log
+
+# Large raw dataset (GitHub's single-file limit is 100 MB)
+1 data/PS_20174392719_1491204439457_log.csv
+
+# Reproducible intermediate data and prediction exports
+1 data/processed/
+6 predict/prediction_output.csv
+6 predict/data_cut_predict.csv

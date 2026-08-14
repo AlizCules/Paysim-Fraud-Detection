@@ -1,0 +1,78 @@
+# MÔ TẢ DỮ LIỆU — DỮ LIỆU THÔ
+
+Thư mục này chứa **bộ dữ liệu gốc** được sử dụng trong dự án Phát hiện gian lận.
+
+Các tệp bên trong thư mục này **không bao giờ được sửa đổi**, tuân theo các thực tiễn tốt nhất trong khoa học dữ liệu và MLOps.
+
+---
+
+## 1. Nguồn dữ liệu
+
+- **Tên:** Bộ dữ liệu mô phỏng gian lận PaySim
+- **Nguồn:** Kaggle
+- **Liên kết:** https://www.kaggle.com/datasets/ealaxi/paysim1
+- **Định dạng:** CSV
+- **Tệp:** `PS_20174392719_1491204439457_log.csv`
+
+Bộ dữ liệu mô phỏng các giao dịch tiền điện tử di động với hành vi gian lận được đưa vào, bắt chước các mô hình được quan sát thấy trong các hệ thống tài chính thực tế.
+
+---
+
+## 2. Kích thước tập dữ liệu
+
+- **Số hàng:** 517.898
+
+- **Số cột:** 11
+- **Dung lượng:** ~48 MB
+
+---
+
+## 3. Mô tả cột
+
+| Cột | Loại | Mô tả |
+
+|--------|------|-------------|
+
+| `step` | int | Bước thời gian tính bằng giờ (1–744). Mỗi bước đại diện cho một giờ. |
+
+| `type` | categorical | Loại giao dịch: THANH TOÁN, RÚT TIỀN, NẠP TIỀN, CHUYỂN KHOẢN, GHI NỢ. |
+
+| `amount` | float | Số tiền giao dịch. |
+
+| `nameOrig` | id string | ID của khách hàng khởi tạo giao dịch. |
+
+| `oldbalanceOrg` | float | Số dư ban đầu của tài khoản gốc trước giao dịch. |
+
+| `newbalanceOrig` | float | Số dư cuối cùng của tài khoản gốc sau giao dịch. |
+
+| `nameDest` | id string | ID của tài khoản đích. |
+
+| `oldbalanceDest` | float | Số dư ban đầu của tài khoản đích. |
+
+| `newbalanceDest` | float | Số dư cuối cùng của tài khoản đích. |
+
+| `isFraud` | binary | Giao dịch có phải là gian lận hay không (nhãn). |
+
+| `isFlaggedFraud` | binary | Cờ tự động nội bộ được đặt cho các giao dịch đáng ngờ. |
+
+---
+
+## 4. Ghi chú về tính toàn vẹn dữ liệu
+
+- Một số hàng chứa giá trị bị thiếu (đặc biệt là trong `newbalanceDest` và `isFraud`).
+
+- Tập dữ liệu rất **mất cân bằng**: gian lận chiếm khoảng ~0,13% tổng số giao dịch.
+
+- ID (`nameOrig`, `nameDest`) **không** tiết lộ thông tin cá nhân; chúng được mô phỏng.
+
+---
+
+## 5. Chính sách sử dụng
+
+Thư mục này chỉ nên lưu trữ **các tệp gốc không bị chỉnh sửa**. Tất cả các bước làm sạch, xử lý đặc trưng và chuyển đổi dữ liệu phải được lưu trữ trong:
+
+```
+/data/processed/
+```
+
+Việc chỉnh sửa các tệp trong thư mục này sẽ làm mất tính khả thi của dự án.
