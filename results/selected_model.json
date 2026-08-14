@@ -1,0 +1,11 @@
+{
+  "selection_split": "validation",
+  "selection_metric": "f1",
+  "selection_rule": "Highest validation F1; ties broken by validation average precision, feature set name, then model name.",
+  "feature_set": "post_transaction",
+  "model": "random_forest",
+  "threshold": 0.6950000000000001,
+  "validation_f1": 0.9995244888254874,
+  "validation_average_precision": 0.9999866367805688,
+  "model_path": "models/canonical/post_transaction/random_forest.joblib"
+}

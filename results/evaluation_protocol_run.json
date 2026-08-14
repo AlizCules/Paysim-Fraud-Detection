@@ -1,0 +1,47 @@
+{
+  "test_evaluation": "single final evaluation after validation-only threshold selection",
+  "split_summary": {
+    "source_path": "data/raw/PS_20174392719_1491204439457_log.csv",
+    "train_end_step": 500,
+    "validation_end_step": 600,
+    "source_raw_available": true,
+    "threshold_selection_split": "validation",
+    "final_evaluation_split": "test",
+    "splits": [
+      {
+        "split": "train",
+        "rows": 308373,
+        "fraud": 5561,
+        "non_fraud": 302812,
+        "fraud_rate": 0.018033355708833135,
+        "min_step": 1,
+        "max_step": 500,
+        "sampling_method": "All fraud + 5.00% of train-period non-fraud, seed=42."
+      },
+      {
+        "split": "validation",
+        "rows": 197240,
+        "fraud": 1052,
+        "non_fraud": 196188,
+        "fraud_rate": 0.005333603731494625,
+        "min_step": 501,
+        "max_step": 600,
+        "sampling_method": "Natural source prevalence; untouched for model selection/evaluation."
+      },
+      {
+        "split": "test",
+        "rows": 103573,
+        "fraud": 1600,
+        "non_fraud": 101973,
+        "fraud_rate": 0.015448041477991368,
+        "min_step": 601,
+        "max_step": 743,
+        "sampling_method": "Natural source prevalence; untouched for model selection/evaluation."
+      }
+    ]
+  },
+  "official_scope": "post_transaction monitoring; pre_transaction comparison included",
+  "threshold_tradeoffs_split": "validation",
+  "model_selection_split": "validation",
+  "feature_importance_source": "validation-selected model from results/selected_model.json"
+}
