@@ -50,4 +50,3 @@ legacy/outputs/
 models/canonical/
 results/predictions.csv
 results/feature_importance_*_*.csv
-results/validation_metrics.csv

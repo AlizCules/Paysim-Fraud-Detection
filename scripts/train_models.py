@@ -12,7 +12,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.data import build_time_splits, project_root, resolve_dataset_path
-from src.evaluation import calculate_metrics, select_threshold
+from src.evaluation import calculate_metrics, select_threshold, threshold_tradeoffs
 from src.features import FEATURE_SETS, prepare_xy
 from src.models import build_model, feature_importance, positive_score, save_model
 
@@ -41,6 +41,10 @@ def main(argv: list[str] | None = None) -> None:
     )
     thresholds: dict[str, dict] = {}
     validation_rows: list[dict] = []
+    tradeoff_rows: list[pd.DataFrame] = []
+    importance_rows: list[pd.DataFrame] = []
+    selected_model: dict | None = None
+    selected_importance: pd.DataFrame | None = None
 
     for feature_set in args.feature_sets:
         X_train, y_train = prepare_xy(splits["train"], feature_set)
@@ -62,11 +66,56 @@ def main(argv: list[str] | None = None) -> None:
                 "threshold": threshold,
                 **selection,
             }
-            validation_rows.append({"feature_set": feature_set, "model": model_name, **metrics})
-            save_model(model, root / "models" / "canonical" / feature_set / f"{model_name}.joblib")
-            feature_importance(model, model_name).assign(
+            validation_metric_row = {
+                key: value for key, value in metrics.items() if key != "test_rows"
+            }
+            validation_rows.append(
+                {
+                    "model": model_name,
+                    "feature_set": feature_set,
+                    "split": "validation",
+                    "rows": len(y_validation),
+                    **validation_metric_row,
+                }
+            )
+            tradeoff_thresholds = sorted({0.10, 0.25, 0.50, round(threshold, 6), 0.75})
+            tradeoff = threshold_tradeoffs(y_validation, validation_score, tradeoff_thresholds)
+            tradeoff.insert(0, "model", model_name)
+            tradeoff.insert(1, "feature_set", feature_set)
+            tradeoff.insert(2, "split", "validation")
+            tradeoff_rows.append(tradeoff)
+            importance = feature_importance(model, model_name).assign(
                 feature_set=feature_set, model=model_name
-            ).to_csv(root / "results" / f"feature_importance_{feature_set}_{model_name}.csv", index=False)
+            )
+            importance_rows.append(importance)
+            candidate_key = (
+                metrics["f1"],
+                metrics["average_precision"],
+                feature_set,
+                model_name,
+            )
+            if selected_model is None or candidate_key > selected_model["_sort_key"]:
+                selected_model = {
+                    "selection_split": "validation",
+                    "selection_metric": "f1",
+                    "selection_rule": (
+                        "Highest validation F1; ties broken by validation average precision, "
+                        "feature set name, then model name."
+                    ),
+                    "feature_set": feature_set,
+                    "model": model_name,
+                    "threshold": threshold,
+                    "validation_f1": metrics["f1"],
+                    "validation_average_precision": metrics["average_precision"],
+                    "model_path": f"models/canonical/{feature_set}/{model_name}.joblib",
+                    "_sort_key": candidate_key,
+                }
+                selected_importance = importance
+            save_model(model, root / "models" / "canonical" / feature_set / f"{model_name}.joblib")
+            importance.to_csv(
+                root / "results" / f"feature_importance_{feature_set}_{model_name}.csv",
+                index=False,
+            )
 
     (root / "results" / "model_thresholds.json").write_text(
         json.dumps(
@@ -82,6 +131,19 @@ def main(argv: list[str] | None = None) -> None:
         encoding="utf-8",
     )
     pd.DataFrame(validation_rows).to_csv(root / "results" / "validation_metrics.csv", index=False)
+    pd.concat(tradeoff_rows, ignore_index=True).to_csv(
+        root / "results" / "threshold_tradeoffs.csv", index=False
+    )
+    pd.concat(importance_rows, ignore_index=True).to_csv(
+        root / "results" / "feature_importance_all_models.csv", index=False
+    )
+    if selected_model is None or selected_importance is None:
+        raise RuntimeError("No canonical model was trained for validation-based selection.")
+    selected_model.pop("_sort_key", None)
+    (root / "results" / "selected_model.json").write_text(
+        json.dumps(selected_model, indent=2) + "\n", encoding="utf-8"
+    )
+    selected_importance.to_csv(root / "results" / "feature_importance.csv", index=False)
     print(pd.DataFrame(validation_rows).to_string(index=False))
 
 

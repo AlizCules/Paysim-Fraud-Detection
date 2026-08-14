@@ -12,9 +12,9 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.data import build_time_splits, project_root, resolve_dataset_path
-from src.evaluation import calculate_metrics, threshold_tradeoffs
+from src.evaluation import calculate_metrics
 from src.features import FEATURE_SETS, prepare_xy
-from src.models import feature_importance, load_model, positive_score
+from src.models import load_model, positive_score
 
 MODEL_NAMES = ["logistic_regression", "random_forest", "xgboost"]
 
@@ -37,36 +37,23 @@ def main(argv: list[str] | None = None) -> None:
         negative_fraction=args.negative_fraction,
         random_state=args.seed,
     )
-    X_test_by_set = {}
     y_test = None
     thresholds_file = root / "results" / "model_thresholds.json"
     threshold_data = json.loads(thresholds_file.read_text(encoding="utf-8"))
+    if threshold_data.get("thresholds_selected_on") != "validation":
+        raise RuntimeError("Frozen thresholds must be selected on validation before test evaluation.")
     rows: list[dict] = []
-    tradeoff_rows: list[pd.DataFrame] = []
-    importance_rows: list[pd.DataFrame] = []
-    best_row: dict | None = None
-    best_model = None
 
     for feature_set in args.feature_sets:
         X_test, y_test = prepare_xy(splits["test"], feature_set)
-        X_test_by_set[feature_set] = X_test
         for model_name in MODEL_NAMES:
             key = f"{feature_set}/{model_name}"
             model = load_model(root / "models" / "canonical" / feature_set / f"{model_name}.joblib")
             score = positive_score(model, X_test)
             threshold = float(threshold_data["models"][key]["threshold"])
             metrics = calculate_metrics(y_test, score, threshold)
-            row = {"model": model_name, "feature_set": feature_set, **metrics}
+            row = {"model": model_name, "feature_set": feature_set, "split": "test", **metrics}
             rows.append(row)
-            thresholds = sorted({0.10, 0.25, 0.50, round(threshold, 6), 0.75})
-            tradeoff = threshold_tradeoffs(y_test, score, thresholds)
-            tradeoff.insert(0, "model", model_name)
-            tradeoff.insert(1, "feature_set", feature_set)
-            tradeoff_rows.append(tradeoff)
-            importance_rows.append(feature_importance(model, model_name).assign(feature_set=feature_set, model=model_name))
-            if best_row is None or row["average_precision"] > best_row["average_precision"]:
-                best_row = row
-                best_model = model
             if feature_set == "post_transaction" and model_name == "xgboost":
                 pd.DataFrame({"fraud_score": score, "fraud_flag": score >= threshold}).to_csv(
                     root / "results" / "predictions.csv", index=False
@@ -74,12 +61,6 @@ def main(argv: list[str] | None = None) -> None:
 
     comparison = pd.DataFrame(rows)
     comparison.to_csv(root / "results" / "model_comparison.csv", index=False)
-    pd.concat(tradeoff_rows, ignore_index=True).to_csv(root / "results" / "threshold_tradeoffs.csv", index=False)
-    pd.concat(importance_rows, ignore_index=True).to_csv(root / "results" / "feature_importance_all_models.csv", index=False)
-    if best_model is not None and best_row is not None:
-        feature_importance(best_model, best_row["model"]).assign(
-            feature_set=best_row["feature_set"], model=best_row["model"]
-        ).to_csv(root / "results" / "feature_importance.csv", index=False)
     comparison.to_csv(root / "results" / "feature_set_comparison.csv", index=False)
     (root / "results" / "evaluation_protocol_run.json").write_text(
         json.dumps(
@@ -87,6 +68,9 @@ def main(argv: list[str] | None = None) -> None:
                 "test_evaluation": "single final evaluation after validation-only threshold selection",
                 "split_summary": split_summary,
                 "official_scope": "post_transaction monitoring; pre_transaction comparison included",
+                "threshold_tradeoffs_split": "validation",
+                "model_selection_split": "validation",
+                "feature_importance_source": "validation-selected model from results/selected_model.json",
             },
             indent=2,
         )

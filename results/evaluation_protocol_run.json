@@ -40,5 +40,8 @@
       }
     ]
   },
-  "official_scope": "post_transaction monitoring; pre_transaction comparison included"
+  "official_scope": "post_transaction monitoring; pre_transaction comparison included",
+  "threshold_tradeoffs_split": "validation",
+  "model_selection_split": "validation",
+  "feature_importance_source": "validation-selected model from results/selected_model.json"
 }
