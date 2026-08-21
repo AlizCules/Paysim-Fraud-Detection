@@ -69,7 +69,9 @@ Power BI-ready copies of these aggregate outputs are in [`powerbi/`](powerbi/). 
 
 The reporting layer contains aggregate CSVs that can be loaded into Power BI without distributing row-level PaySim data. [`docs/powerbi_dashboard_guide.md`](docs/powerbi_dashboard_guide.md) gives the dataset, axis, value, sort, tooltip and analytical question for each recommended visual. The reproducible [`scripts/build_dashboard.py`](scripts/build_dashboard.py) reads only the verified `powerbi/` CSVs and generates the [`reports/dashboard.html`](reports/dashboard.html) interactive HTML dashboard artifact. No hosted or live dashboard is claimed.
 
-The dashboard keeps the simulated-data caveat visible and includes overall fraud KPIs, fraud by type/amount band/hour/day, high-risk segments and model/threshold alert-rate comparison. A static PNG preview is not included because the current environment does not provide a reliable image-export dependency; the interactive HTML artifact remains the reproducible preview.
+![PaySim Fraud Analytics Dashboard](reports/dashboard_preview.png)
+
+The dashboard keeps the simulated-data caveat visible and includes overall fraud KPIs, fraud by type/amount band/hour/day, high-risk segments and model/threshold alert-rate comparison.
 
 ## Feature Engineering
 
