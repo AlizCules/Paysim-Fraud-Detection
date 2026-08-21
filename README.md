@@ -12,6 +12,25 @@ An end-to-end analysis of simulated mobile-money transactions using EDA, SQL, le
 | Final chronological test | 103,573 transactions |
 | Best canonical post-transaction F1 | 0.9997 — validation-selected Random Forest, final chronological test |
 
+## Key Findings
+
+- Fraud is concentrated in `TRANSFER` and `CASH_OUT`; the simulated fraud rate is 2.07% in the `>=1m` amount band versus 0.14% in the `100k-1m` band, providing an operational screening signal for review prioritization.
+- The DuckDB/SQL layer is the direct analyst-facing deliverable: it answers fraud rate and amount questions by transaction type, hour, day, amount band and high-risk segment, and reports scored alert volume for review monitoring.
+- The post-transaction Random Forest reaches F1 0.9997 at an approximately 1.54% alert rate on the final chronological test; this is a strong result for this simulated PaySim setting, not evidence of performance on real banking data.
+
+## SQL Analysis
+
+The SQL layer uses DuckDB and is defined in [`sql/fraud_analysis.sql`](sql/fraud_analysis.sql). It answers questions about:
+
+- total transactions and fraud rate;
+- fraud by transaction type and fraud amount;
+- fraud by simulated hour and day;
+- fraud by amount band;
+- high-risk type/hour segments;
+- final scored alert volume.
+
+Exported tables are available under [`results/sql/`](results/sql/). Power BI-ready copies are in [`powerbi/`](powerbi/), with assembly instructions in [`docs/powerbi_dashboard_guide.md`](docs/powerbi_dashboard_guide.md). A lightweight preview is available at [`reports/dashboard.html`](reports/dashboard.html).
+
 ## Analytical Question
 
 How well can transaction-level information in the PaySim simulation distinguish fraudulent transactions, and what patterns are associated with fraud within this simulated environment?
@@ -63,6 +82,8 @@ The test set is then evaluated once with frozen candidates and frozen validation
 
 Final test results for both feature scopes:
 
+In this simulated setting, the post-transaction Random Forest is the practical canonical pick: it combines precision 1.0000, recall 0.9994 and F1 0.9997 with a 1.5438% alert rate. The post-transaction XGBoost result is nearly identical on F1 (0.9994) with a 1.5467% alert rate, so the comparison makes the precision/recall/alert-volume trade-off visible rather than selecting on a single score. These are simulator-specific outputs and do not generalize to real banking data.
+
 | Feature scope | Model | ROC-AUC | Avg. Precision | Precision | Recall | F1 | Threshold | Alert rate |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | Pre | Logistic Regression | 0.9955 | 0.8423 | 0.8800 | 0.6144 | 0.7236 | 0.975 | 1.0785% |
@@ -81,19 +102,6 @@ Post-transaction features improve the canonical test metrics in this simulation,
 ## Threshold and Alert Trade-offs
 
 [`results/threshold_tradeoffs.csv`](results/threshold_tradeoffs.csv) contains validation-only threshold trade-offs with `split=validation`. It supports transparent threshold selection without using the test labels. Final test alert rates in `model_comparison.csv` are frozen performance reports, not threshold recommendations.
-
-## SQL Analysis
-
-The SQL layer uses DuckDB and is defined in [`sql/fraud_analysis.sql`](sql/fraud_analysis.sql). It answers questions about:
-
-- total transactions and fraud rate;
-- fraud by transaction type and fraud amount;
-- fraud by simulated hour and day;
-- fraud by amount band;
-- high-risk type/hour segments;
-- final scored alert volume.
-
-Exported tables are available under [`results/sql/`](results/sql/).
 
 ## Repository Structure
 
