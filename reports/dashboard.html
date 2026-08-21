@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PaySim Fraud Analytics Dashboard</title>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <style>
+    :root { color-scheme: light; --ink: #17202a; --muted: #5d6d7e; --line: #d5d8dc; --panel: #fff; --bg: #f4f6f7; --accent: #1f618d; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 Arial, sans-serif; }
+    main { max-width: 1380px; margin: 0 auto; padding: 28px; }
+    h1 { margin: 0 0 6px; font-size: 28px; }
+    h2 { margin: 0 0 12px; font-size: 18px; }
+    .subtitle, .note, .footer { color: var(--muted); }
+    .note { margin: 0 0 20px; }
+    .kpis, .grid { display: grid; gap: 14px; }
+    .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 22px 0; }
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .card, .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 2px 8px rgba(23, 32, 42, .06); }
+    .card { padding: 18px; }
+    .panel { padding: 14px; min-width: 0; }
+    .label { color: var(--muted); font-size: 13px; }
+    .value { margin-top: 7px; font-size: 26px; font-weight: 700; }
+    .chart { height: 330px; }
+    .wide { grid-column: 1 / -1; }
+    .control { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--muted); }
+    select { padding: 6px 8px; border: 1px solid var(--line); border-radius: 5px; background: #fff; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 8px 9px; border-bottom: 1px solid #eaedef; text-align: left; }
+    th { background: #f8f9f9; }
+    .footer { margin-top: 20px; font-size: 13px; }
+    @media (max-width: 900px) { .kpis, .grid { grid-template-columns: 1fr; } .wide { grid-column: auto; } main { padding: 16px; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>PaySim Transaction Fraud Analytics</h1>
+  <p class="subtitle">Interactive analyst-facing preview generated from the aggregate files in <code>powerbi/</code>.</p>
+  <p class="note"><strong>Scope:</strong> PaySim is simulated data, not real bank transaction data. Use these patterns for exploratory analysis and offline review prioritization only; this is not a production or real-time fraud-prevention application.</p>
+
+  <section class="kpis" aria-label="Key performance indicators">
+    <div class="card"><div class="label">Source transactions</div><div class="value" id="source-transactions">—</div></div>
+    <div class="card"><div class="label">Source fraud rate</div><div class="value" id="source-fraud-rate">—</div></div>
+    <div class="card"><div class="label">SQL scored alerts</div><div class="value" id="sql-alerts">—</div></div>
+    <div class="card"><div class="label">SQL alert rate</div><div class="value" id="sql-alert-rate">—</div></div>
+  </section>
+
+  <section class="grid">
+    <div class="panel"><h2>Fraud rate by transaction type</h2><div class="chart" id="by-type"></div></div>
+    <div class="panel"><h2>Fraud rate by simulated hour</h2><div class="chart" id="by-hour"></div></div>
+    <div class="panel"><h2>Fraud rate by amount band</h2><div class="chart" id="by-band"></div></div>
+    <div class="panel"><h2>Fraud rate by simulated day</h2><div class="chart" id="by-day"></div></div>
+    <div class="panel wide"><h2>High-risk type/hour segments</h2><div class="chart" id="by-segment"></div></div>
+    <div class="panel wide">
+      <h2>Alert-rate comparison by model and threshold</h2>
+      <div class="control"><label for="model-filter">Candidate:</label><select id="model-filter"><option value="all">All candidates</option></select></div>
+      <div class="chart" id="by-model"></div>
+    </div>
+    <div class="panel wide"><h2>High-risk segment detail</h2><div id="segment-table"></div></div>
+  </section>
+
+  <p class="footer">Source mapping: <code>powerbi/data_dictionary.md</code>. Model comparison rows are final-test reports with validation-selected thresholds; they are not operational alert-policy recommendations.</p>
+</main>
+
+<script>
+const dashboardData = {"overall":[{"transactions":6362620,"fraud_transactions":8213,"non_fraud_transactions":6354407,"fraud_rate":0.001290820448180152}],"by_type":[{"type":"TRANSFER","transactions":532909,"fraud_transactions":4097,"fraud_rate":0.007687991758442811,"fraud_amount":6067213184.01},{"type":"CASH_OUT","transactions":2237500,"fraud_transactions":4116,"fraud_rate":0.0018395530726256983,"fraud_amount":5989202243.830002},{"type":"CASH_IN","transactions":1399284,"fraud_transactions":0,"fraud_rate":0,"fraud_amount":0},{"type":"PAYMENT","transactions":2151495,"fraud_transactions":0,"fraud_rate":0,"fraud_amount":0},{"type":"DEBIT","transactions":41432,"fraud_transactions":0,"fraud_rate":0,"fraud_amount":0}],"by_amount_band":[{"amount_band":"<1k","transactions":142642,"fraud_transactions":58,"fraud_rate":0.00040661235821146645},{"amount_band":"1k-10k","transactions":1143361,"fraud_transactions":220,"fraud_rate":0.0001924151689623837},{"amount_band":"10k-100k","transactions":2239253,"fraud_transactions":1429,"fraud_rate":0.0006381592432833628},{"amount_band":"100k-1m","transactions":2706738,"fraud_transactions":3800,"fraud_rate":0.0014039038872620845},{"amount_band":">=1m","transactions":130626,"fraud_transactions":2706,"fraud_rate":0.02071563088512241}],"by_hour":[{"hour":0,"transactions":71587,"fraud_transactions":300,"fraud_rate":0.004190705016273904},{"hour":1,"transactions":27111,"fraud_transactions":358,"fraud_rate":0.013204972151525211},{"hour":2,"transactions":9018,"fraud_transactions":372,"fraud_rate":0.04125083166999335},{"hour":3,"transactions":2007,"fraud_transactions":326,"fraud_rate":0.16243148978574987},{"hour":4,"transactions":1241,"fraud_transactions":274,"fraud_rate":0.22078968573730862},{"hour":5,"transactions":1641,"fraud_transactions":366,"fraud_rate":0.2230347349177331},{"hour":6,"transactions":3420,"fraud_transactions":358,"fraud_rate":0.10467836257309941},{"hour":7,"transactions":8988,"fraud_transactions":328,"fraud_rate":0.03649310191366266},{"hour":8,"transactions":26915,"fraud_transactions":368,"fraud_rate":0.013672673230540592},{"hour":9,"transactions":283518,"fraud_transactions":341,"fraud_rate":0.0012027455046945872},{"hour":10,"transactions":425729,"fraud_transactions":375,"fraud_rate":0.0008808420380100957},{"hour":11,"transactions":445992,"fraud_transactions":324,"fraud_rate":0.0007264704299628692},{"hour":12,"transactions":483418,"fraud_transactions":339,"fraud_rate":0.0007012564695563673},{"hour":13,"transactions":468474,"fraud_transactions":346,"fraud_rate":0.0007385682022908422},{"hour":14,"transactions":439653,"fraud_transactions":353,"fraud_rate":0.0008029059280841937},{"hour":15,"transactions":416686,"fraud_transactions":341,"fraud_rate":0.0008183620280019007},{"hour":16,"transactions":441612,"fraud_transactions":345,"fraud_rate":0.0007812287709573109},{"hour":17,"transactions":439941,"fraud_transactions":353,"fraud_rate":0.0008023803191791627},{"hour":18,"transactions":580509,"fraud_transactions":343,"fraud_rate":0.0005908607790749153},{"hour":19,"transactions":647814,"fraud_transactions":342,"fraud_rate":0.0005279293130435587},{"hour":20,"transactions":553728,"fraud_transactions":340,"fraud_rate":0.0006140198797965788},{"hour":21,"transactions":247806,"fraud_transactions":347,"fraud_rate":0.0014002889356997006},{"hour":22,"transactions":194555,"fraud_transactions":351,"fraud_rate":0.001804117087712986},{"hour":23,"transactions":141257,"fraud_transactions":323,"fraud_rate":0.002286612344874944}],"by_day":[{"day":0,"transactions":182111,"fraud_transactions":141,"fraud_rate":0.0007742530654381119},{"day":1,"transactions":477940,"fraud_transactions":257,"fraud_rate":0.0005377244005523706},{"day":2,"transactions":370336,"fraud_transactions":316,"fraud_rate":0.0008532791843083038},{"day":3,"transactions":290,"fraud_transactions":290,"fraud_rate":1},{"day":4,"transactions":28939,"fraud_transactions":286,"fraud_rate":0.009882857044127303},{"day":5,"transactions":101809,"fraud_transactions":218,"fraud_rate":0.002141264524747321},{"day":6,"transactions":456213,"fraud_transactions":272,"fraud_rate":0.000596212733964179},{"day":7,"transactions":390675,"fraud_transactions":256,"fraud_rate":0.000655276124656044},{"day":8,"transactions":496813,"fraud_transactions":242,"fraud_rate":0.0004871048060336585},{"day":9,"transactions":372780,"fraud_transactions":277,"fraud_rate":0.0007430656151081067},{"day":10,"transactions":441245,"fraud_transactions":298,"fraud_rate":0.0006753617604732065},{"day":11,"transactions":343744,"fraud_transactions":268,"fraud_rate":0.0007796499720722399},{"day":12,"transactions":410755,"fraud_transactions":280,"fraud_rate":0.0006816715560370538},{"day":13,"transactions":389937,"fraud_transactions":242,"fraud_rate":0.0006206130733939073},{"day":14,"transactions":422531,"fraud_transactions":226,"fraud_rate":0.0005348719975575756},{"day":15,"transactions":370255,"fraud_transactions":276,"fraud_rate":0.0007454322021309637},{"day":16,"transactions":412520,"fraud_transactions":268,"fraud_rate":0.0006496654707650538},{"day":17,"transactions":322823,"fraud_transactions":316,"fraud_rate":0.000978864579041766},{"day":18,"transactions":19157,"fraud_transactions":272,"fraud_rate":0.01419846531294044},{"day":19,"transactions":10491,"fraud_transactions":240,"fraud_rate":0.02287675150128682},{"day":20,"transactions":28337,"fraud_transactions":236,"fraud_rate":0.00832833398030843},{"day":21,"transactions":24364,"fraud_transactions":252,"fraud_rate":0.010343129207026762},{"day":22,"transactions":53374,"fraud_transactions":262,"fraud_rate":0.0049087570727320414},{"day":23,"transactions":44586,"fraud_transactions":238,"fraud_rate":0.005337998474857579},{"day":24,"transactions":42216,"fraud_transactions":284,"fraud_rate":0.006727307182111048},{"day":25,"transactions":48040,"fraud_transactions":226,"fraud_rate":0.0047044129891756865},{"day":26,"transactions":10927,"fraud_transactions":276,"fraud_rate":0.025258533906836276},{"day":27,"transactions":13114,"fraud_transactions":270,"fraud_rate":0.020588683849321335},{"day":28,"transactions":21917,"fraud_transactions":240,"fraud_rate":0.010950403796139983},{"day":29,"transactions":45691,"fraud_transactions":278,"fraud_rate":0.006084349215381585},{"day":30,"transactions":8566,"fraud_transactions":286,"fraud_rate":0.03338781228111137},{"day":31,"transactions":124,"fraud_transactions":124,"fraud_rate":1}],"by_segment":[{"type":"TRANSFER","hour":7,"transactions":1048,"fraud_transactions":164,"fraud_rate":0.15648854961832062},{"type":"CASH_OUT","hour":2,"transactions":1256,"fraud_transactions":186,"fraud_rate":0.1480891719745223},{"type":"CASH_OUT","hour":7,"transactions":1494,"fraud_transactions":164,"fraud_rate":0.10977242302543508},{"type":"TRANSFER","hour":1,"transactions":2107,"fraud_transactions":178,"fraud_rate":0.08448030374940674},{"type":"TRANSFER","hour":8,"transactions":2643,"fraud_transactions":184,"fraud_rate":0.06961785849413545},{"type":"CASH_OUT","hour":1,"transactions":3898,"fraud_transactions":180,"fraud_rate":0.046177526936890714},{"type":"TRANSFER","hour":0,"transactions":6217,"fraud_transactions":150,"fraud_rate":0.024127392633102783},{"type":"CASH_OUT","hour":8,"transactions":7659,"fraud_transactions":184,"fraud_rate":0.024024024024024024},{"type":"TRANSFER","hour":23,"transactions":11866,"fraud_transactions":162,"fraud_rate":0.013652452384965447},{"type":"CASH_OUT","hour":0,"transactions":11997,"fraud_transactions":150,"fraud_rate":0.012503125781445362},{"type":"TRANSFER","hour":22,"transactions":16790,"fraud_transactions":175,"fraud_rate":0.01042287075640262},{"type":"TRANSFER","hour":21,"transactions":20526,"fraud_transactions":173,"fraud_rate":0.00842833479489428},{"type":"TRANSFER","hour":9,"transactions":25203,"fraud_transactions":171,"fraud_rate":0.006784906558743007},{"type":"CASH_OUT","hour":23,"transactions":26168,"fraud_transactions":161,"fraud_rate":0.00615255273616631},{"type":"TRANSFER","hour":10,"transactions":36042,"fraud_transactions":187,"fraud_rate":0.005188391321236336},{"type":"TRANSFER","hour":17,"transactions":36891,"fraud_transactions":176,"fraud_rate":0.004770811308991353},{"type":"TRANSFER","hour":15,"transactions":36332,"fraud_transactions":169,"fraud_rate":0.004651546845755808},{"type":"TRANSFER","hour":14,"transactions":37789,"fraud_transactions":175,"fraud_rate":0.004630977268517293},{"type":"TRANSFER","hour":16,"transactions":39263,"fraud_transactions":172,"fraud_rate":0.004380714667753355},{"type":"TRANSFER","hour":11,"transactions":37393,"fraud_transactions":162,"fraud_rate":0.00433236167197069}],"sql_alerts":[{"scored_transactions":103573,"alerts":1602,"alert_rate":0.015467351529838858,"mean_fraud_score":0.015468971391827645}],"model_alerts":[{"model":"logistic_regression","feature_set":"pre_transaction","split":"test","threshold":0.975,"alert_rate":0.010784663956822723,"test_rows":103573},{"model":"random_forest","feature_set":"pre_transaction","split":"test","threshold":0.885,"alert_rate":0.015341836192830178,"test_rows":103573},{"model":"xgboost","feature_set":"pre_transaction","split":"test","threshold":0.99,"alert_rate":0.015621831944618771,"test_rows":103573},{"model":"logistic_regression","feature_set":"post_transaction","split":"test","threshold":0.985,"alert_rate":0.011663271315883484,"test_rows":103573},{"model":"random_forest","feature_set":"post_transaction","split":"test","threshold":0.6950000000000001,"alert_rate":0.015438386452067623,"test_rows":103573},{"model":"xgboost","feature_set":"post_transaction","split":"test","threshold":0.08,"alert_rate":0.015467351529838858,"test_rows":103573}]};
+const pct = value => `${(Number(value) * 100).toFixed(2)}%`;
+const integer = value => new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Number(value));
+const rateAxis = { tickformat: '.2%' };
+const baseLayout = { margin: { t: 12, r: 20, b: 55, l: 62 }, paper_bgcolor: '#fff', plot_bgcolor: '#fff', font: { family: 'Arial, sans-serif', color: '#17202a' }, hovermode: 'closest' };
+const config = { responsive: true, displaylogo: false };
+
+const overall = dashboardData.overall[0];
+const sqlAlerts = dashboardData.sql_alerts[0];
+document.getElementById('source-transactions').textContent = integer(overall.transactions);
+document.getElementById('source-fraud-rate').textContent = pct(overall.fraud_rate);
+document.getElementById('sql-alerts').textContent = integer(sqlAlerts.alerts);
+document.getElementById('sql-alert-rate').textContent = pct(sqlAlerts.alert_rate);
+
+function draw(id, traces, extra = {}) {
+  Plotly.newPlot(id, traces, { ...baseLayout, ...extra }, config);
+}
+
+draw('by-type', [{
+  x: dashboardData.by_type.map(row => row.type),
+  y: dashboardData.by_type.map(row => row.fraud_rate),
+  customdata: dashboardData.by_type.map(row => [row.transactions, row.fraud_transactions, row.fraud_amount]),
+  type: 'bar', marker: { color: '#1f618d' },
+  hovertemplate: '%{x}<br>Fraud rate: %{y:.2%}<br>Transactions: %{customdata[0]:,}<br>Fraud transactions: %{customdata[1]:,}<br>Fraud amount: %{customdata[2]:,.2f}<extra></extra>'
+}], { yaxis: { ...rateAxis, title: 'Fraud rate' }, xaxis: { title: 'Transaction type' } });
+
+draw('by-hour', [{
+  x: dashboardData.by_hour.map(row => row.hour),
+  y: dashboardData.by_hour.map(row => row.fraud_rate),
+  customdata: dashboardData.by_hour.map(row => [row.transactions, row.fraud_transactions]),
+  mode: 'lines+markers', type: 'scatter', line: { color: '#1f618d' },
+  hovertemplate: 'Hour %{x}<br>Fraud rate: %{y:.2%}<br>Transactions: %{customdata[0]:,}<br>Fraud transactions: %{customdata[1]:,}<extra></extra>'
+}], { yaxis: { ...rateAxis, title: 'Fraud rate' }, xaxis: { title: 'Simulated hour', dtick: 2 } });
+
+draw('by-band', [{
+  x: dashboardData.by_amount_band.map(row => row.amount_band),
+  y: dashboardData.by_amount_band.map(row => row.fraud_rate),
+  customdata: dashboardData.by_amount_band.map(row => [row.transactions, row.fraud_transactions]),
+  type: 'bar', marker: { color: '#2874a6' },
+  hovertemplate: '%{x}<br>Fraud rate: %{y:.2%}<br>Transactions: %{customdata[0]:,}<br>Fraud transactions: %{customdata[1]:,}<extra></extra>'
+}], { yaxis: { ...rateAxis, title: 'Fraud rate' }, xaxis: { title: 'Amount band' } });
+
+draw('by-day', [{
+  x: dashboardData.by_day.map(row => row.day),
+  y: dashboardData.by_day.map(row => row.fraud_rate),
+  customdata: dashboardData.by_day.map(row => [row.transactions, row.fraud_transactions]),
+  mode: 'lines+markers', type: 'scatter', line: { color: '#5499c7' },
+  hovertemplate: 'Day %{x}<br>Fraud rate: %{y:.2%}<br>Transactions: %{customdata[0]:,}<br>Fraud transactions: %{customdata[1]:,}<extra></extra>'
+}], { yaxis: { ...rateAxis, title: 'Fraud rate' }, xaxis: { title: 'Simulated day' } });
+
+draw('by-segment', [{
+  x: dashboardData.by_segment.map(row => `${row.type} / h${row.hour}`),
+  y: dashboardData.by_segment.map(row => row.fraud_rate),
+  customdata: dashboardData.by_segment.map(row => [row.transactions, row.fraud_transactions]),
+  type: 'bar', marker: { color: '#7b241c' },
+  hovertemplate: '%{x}<br>Fraud rate: %{y:.2%}<br>Transactions: %{customdata[0]:,}<br>Fraud transactions: %{customdata[1]:,}<extra></extra>'
+}], { yaxis: { ...rateAxis, title: 'Fraud rate' }, xaxis: { title: 'Retained type/hour segment', tickangle: -35 } });
+
+const modelFilter = document.getElementById('model-filter');
+const candidates = [...new Set(dashboardData.model_alerts.map(row => `${row.model} / ${row.feature_set}`))];
+candidates.forEach(candidate => { const option = document.createElement('option'); option.value = candidate; option.textContent = candidate; modelFilter.appendChild(option); });
+function drawModelComparison() {
+  const selected = modelFilter.value;
+  const rows = selected === 'all' ? dashboardData.model_alerts : dashboardData.model_alerts.filter(row => `${row.model} / ${row.feature_set}` === selected);
+  draw('by-model', [{
+    x: rows.map(row => `${row.model} / ${row.feature_set}`),
+    y: rows.map(row => row.alert_rate),
+    customdata: rows.map(row => [row.threshold, row.test_rows, row.split]),
+    type: 'bar', marker: { color: '#239b56' },
+    hovertemplate: '%{x}<br>Alert rate: %{y:.2%}<br>Threshold: %{customdata[0]}<br>Test rows: %{customdata[1]:,}<br>Split: %{customdata[2]}<extra></extra>'
+  }], { yaxis: { ...rateAxis, title: 'Alert rate' }, xaxis: { title: 'Model / feature scope', tickangle: -25 } });
+}
+modelFilter.addEventListener('change', drawModelComparison);
+drawModelComparison();
+
+const segmentRows = dashboardData.by_segment.map(row => `<tr><td>${row.type}</td><td>${row.hour}</td><td>${integer(row.transactions)}</td><td>${integer(row.fraud_transactions)}</td><td>${pct(row.fraud_rate)}</td></tr>`).join('');
+document.getElementById('segment-table').innerHTML = `<table><thead><tr><th>Type</th><th>Hour</th><th>Transactions</th><th>Fraud transactions</th><th>Fraud rate</th></tr></thead><tbody>${segmentRows}</tbody></table>`;
+</script>
+</body>
+</html>
