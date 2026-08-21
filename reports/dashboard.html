@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PaySim Fraud Analysis Dashboard Preview</title>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <style>
+    :root { color-scheme: light; --ink: #17202a; --muted: #5d6d7e; --line: #d5d8dc; --panel: #ffffff; --bg: #f4f6f7; --accent: #1f618d; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 Arial, sans-serif; }
+    main { max-width: 1320px; margin: 0 auto; padding: 28px; }
+    h1 { margin: 0 0 6px; font-size: 28px; }
+    h2 { margin: 0 0 14px; font-size: 18px; }
+    .subtitle, .note { color: var(--muted); }
+    .note { margin: 0 0 22px; }
+    .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 22px 0; }
+    .card, .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 2px 8px rgba(23, 32, 42, .06); }
+    .card { padding: 18px; }
+    .label { color: var(--muted); font-size: 13px; }
+    .value { margin-top: 7px; font-size: 26px; font-weight: 700; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .panel { padding: 14px; min-width: 0; }
+    .chart { height: 330px; }
+    .wide { grid-column: 1 / -1; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 8px 9px; border-bottom: 1px solid #eaedef; text-align: left; }
+    th { background: #f8f9f9; }
+    .footer { margin-top: 20px; color: var(--muted); font-size: 13px; }
+    @media (max-width: 900px) { .kpis, .grid { grid-template-columns: 1fr; } .wide { grid-column: auto; } main { padding: 16px; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>PaySim Transaction Fraud Analysis</h1>
+  <p class="subtitle">Analyst-facing dashboard preview built from the aggregate files in <code>powerbi/</code>.</p>
+  <p class="note"><strong>Scope:</strong> PaySim is simulated data, not real bank transaction data. Use these patterns for exploratory review prioritization only.</p>
+
+  <section class="kpis" aria-label="Key performance indicators">
+    <div class="card"><div class="label">Overall fraud rate</div><div class="value" id="overall-rate">—</div></div>
+    <div class="card"><div class="label">Source transactions</div><div class="value" id="source-transactions">—</div></div>
+    <div class="card"><div class="label">Selected alert volume</div><div class="value" id="selected-alerts">—</div></div>
+    <div class="card"><div class="label">Selected alert rate</div><div class="value" id="selected-alert-rate">—</div></div>
+  </section>
+
+  <section class="grid">
+    <div class="panel"><h2>Fraud rate by transaction type</h2><div class="chart" id="by-type"></div></div>
+    <div class="panel"><h2>Fraud rate by simulated hour</h2><div class="chart" id="by-hour"></div></div>
+    <div class="panel"><h2>Fraud rate by amount band</h2><div class="chart" id="by-band"></div></div>
+    <div class="panel"><h2>Fraud rate by simulated day</h2><div class="chart" id="by-day"></div></div>
+    <div class="panel wide"><h2>High-risk type/hour segments</h2><div class="chart" id="by-segment"></div></div>
+    <div class="panel wide"><h2>Alert-rate comparison by model and threshold</h2><div class="chart" id="by-model"></div></div>
+    <div class="panel wide"><h2>High-risk segment detail</h2><div id="segment-table"></div></div>
+  </section>
+
+  <p class="footer">Source mapping and field definitions: <code>powerbi/data_dictionary.md</code>. The model comparison uses final-test rows with validation-selected thresholds; it is not a production alert-policy recommendation.</p>
+</main>
+
+<script>
+const dashboardData = {
+  overall: { transactions: 6362620, fraud_rate: 0.001290820448180152 },
+  selected: { alerts: 1602.0, alert_rate: 0.015467351529838858 },
+  byType: [
+    { type: "TRANSFER", transactions: 532909, fraud_transactions: 4097.0, fraud_rate: 0.007687991758442811 },
+    { type: "CASH_OUT", transactions: 2237500, fraud_transactions: 4116.0, fraud_rate: 0.0018395530726256983 },
+    { type: "CASH_IN", transactions: 1399284, fraud_transactions: 0.0, fraud_rate: 0.0 },
+    { type: "PAYMENT", transactions: 2151495, fraud_transactions: 0.0, fraud_rate: 0.0 },
+    { type: "DEBIT", transactions: 41432, fraud_transactions: 0.0, fraud_rate: 0.0 }
+  ],
+  byHour: [
+    [0, 0.004190705016273904], [1, 0.013204972151525211], [2, 0.04125083166999335], [3, 0.16243148978574987],
+    [4, 0.22078968573730862], [5, 0.2230347349177331], [6, 0.10467836257309941], [7, 0.03649310191366266],
+    [8, 0.013672673230540592], [9, 0.0012027455046945872], [10, 0.0008808420380100957], [11, 0.0007264704299628692],
+    [12, 0.0007012564695563673], [13, 0.0007385682022908422], [14, 0.0008029059280841937], [15, 0.0008183620280019007],
+    [16, 0.0007812287709573109], [17, 0.0008023803191791627], [18, 0.0005908607790749153], [19, 0.0005279293130435587],
+    [20, 0.0006140198797965788], [21, 0.0014002889356997006], [22, 0.001804117087712986], [23, 0.002286612344874944]
+  ],
+  byDay: [
+    [0, 0.0007742530654381119], [1, 0.0005377244005523706], [2, 0.0008532791843083038], [3, 1.0], [4, 0.009882857044127303], [5, 0.002141264524747321], [6, 0.000596212733964179], [7, 0.000655276124656044], [8, 0.0004871048060336585],
+    [9, 0.0007430656151081067], [10, 0.0006753617604732065], [11, 0.0007796499720722399], [12, 0.0006816715560370538], [13, 0.0006206130733939073], [14, 0.0005348719975575756], [15, 0.0007454322021309637],
+    [16, 0.0006496654707650538], [17, 0.000978864579041766], [18, 0.01419846531294044], [19, 0.02287675150128682], [20, 0.00832833398030843], [21, 0.010343129207026762], [22, 0.0049087570727320414],
+    [23, 0.005337998474857579], [24, 0.006727307182111048], [25, 0.0047044129891756865], [26, 0.025258533906836276], [27, 0.020588683849321335], [28, 0.010950403796139983], [29, 0.006084349215381585], [30, 0.03338781228111137], [31, 1.0]
+  ],
+  byBand: [
+    ["<1k", 0.00040661235821146645], ["1k-10k", 0.0001924151689623837], ["10k-100k", 0.0006381592432833628],
+    ["100k-1m", 0.0014039038872620845], [">=1m", 0.02071563088512241]
+  ],
+  segments: [
+    ["TRANSFER", 7, 0.15648854961832062], ["CASH_OUT", 2, 0.1480891719745223], ["CASH_OUT", 7, 0.10977242302543508],
+    ["TRANSFER", 1, 0.08448030374940674], ["TRANSFER", 8, 0.06961785849413545], ["CASH_OUT", 1, 0.046177526936890714],
+    ["TRANSFER", 0, 0.024127392633102783], ["CASH_OUT", 8, 0.024024024024024024], ["TRANSFER", 23, 0.013652452384965447],
+    ["CASH_OUT", 0, 0.012503125781445362], ["TRANSFER", 22, 0.01042287075640262], ["TRANSFER", 21, 0.00842833479489428],
+    ["TRANSFER", 9, 0.006784906558743007], ["CASH_OUT", 23, 0.00615255273616631], ["TRANSFER", 10, 0.005188391321236336],
+    ["TRANSFER", 17, 0.004770811308991353], ["TRANSFER", 15, 0.004651546845755808], ["TRANSFER", 14, 0.004630977268517293],
+    ["TRANSFER", 16, 0.004380714667753355], ["TRANSFER", 11, 0.00433236167197069]
+  ],
+  models: [
+    ["Logistic Regression / Pre", 0.010784663956822723, 0.975], ["Random Forest / Pre", 0.015341836192830178, 0.885],
+    ["XGBoost / Pre", 0.015621831944618771, 0.99], ["Logistic Regression / Post", 0.011663271315883484, 0.985],
+    ["Random Forest / Post", 0.015438386452067623, 0.695], ["XGBoost / Post", 0.015467351529838858, 0.08]
+  ]
+};
+
+const pct = value => `${(value * 100).toFixed(2)}%`;
+const number = value => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value);
+document.getElementById("overall-rate").textContent = pct(dashboardData.overall.fraud_rate);
+document.getElementById("source-transactions").textContent = number(dashboardData.overall.transactions);
+document.getElementById("selected-alerts").textContent = number(dashboardData.selected.alerts);
+document.getElementById("selected-alert-rate").textContent = pct(dashboardData.selected.alert_rate);
+
+const baseLayout = { margin: { t: 10, r: 20, b: 55, l: 60 }, paper_bgcolor: "#ffffff", plot_bgcolor: "#ffffff", font: { family: "Arial, sans-serif", color: "#17202a" }, yaxis: { tickformat: ".1%", gridcolor: "#eaedef" } };
+const config = { responsive: true, displaylogo: false };
+Plotly.newPlot("by-type", [{ x: dashboardData.byType.map(d => d.type), y: dashboardData.byType.map(d => d.fraud_rate), customdata: dashboardData.byType.map(d => [d.fraud_transactions]), type: "bar", marker: { color: "#1f618d" }, hovertemplate: "%{x}<br>Fraud rate: %{y:.2%}<br>Fraud transactions: %{customdata[0]}<extra></extra>" }], { ...baseLayout, xaxis: { title: "Transaction type" }, yaxis: { ...baseLayout.yaxis, title: "Fraud rate" } }, config);
+Plotly.newPlot("by-hour", [{ x: dashboardData.byHour.map(d => d[0]), y: dashboardData.byHour.map(d => d[1]), mode: "lines+markers", line: { color: "#922b21" }, hovertemplate: "Hour %{x}<br>Fraud rate: %{y:.2%}<extra></extra>" }], { ...baseLayout, xaxis: { title: "Simulated hour", dtick: 2 }, yaxis: { ...baseLayout.yaxis, title: "Fraud rate" } }, config);
+Plotly.newPlot("by-band", [{ x: dashboardData.byBand.map(d => d[0]), y: dashboardData.byBand.map(d => d[1]), type: "bar", marker: { color: "#7d3c98" }, hovertemplate: "%{x}<br>Fraud rate: %{y:.2%}<extra></extra>" }], { ...baseLayout, xaxis: { title: "Amount band" }, yaxis: { ...baseLayout.yaxis, title: "Fraud rate" } }, config);
+Plotly.newPlot("by-day", [{ x: dashboardData.byDay.map(d => d[0]), y: dashboardData.byDay.map(d => d[1]), type: "bar", marker: { color: "#148f77" }, hovertemplate: "Day %{x}<br>Fraud rate: %{y:.2%}<extra></extra>" }], { ...baseLayout, xaxis: { title: "Simulated day" }, yaxis: { ...baseLayout.yaxis, title: "Fraud rate" } }, config);
+Plotly.newPlot("by-segment", [{ x: dashboardData.segments.map(d => `${d[0]} / hour ${d[1]}`), y: dashboardData.segments.map(d => d[2]), type: "bar", marker: { color: "#b9770e" }, hovertemplate: "%{x}<br>Fraud rate: %{y:.2%}<extra></extra>" }], { ...baseLayout, xaxis: { tickangle: -25, title: "Type / hour segment" }, yaxis: { ...baseLayout.yaxis, title: "Fraud rate" } }, config);
+Plotly.newPlot("by-model", [{ x: dashboardData.models.map(d => d[0]), y: dashboardData.models.map(d => d[1]), customdata: dashboardData.models.map(d => [d[2]]), type: "bar", marker: { color: "#34495e" }, hovertemplate: "%{x}<br>Alert rate: %{y:.2%}<br>Threshold: %{customdata[0]}<extra></extra>" }], { ...baseLayout, xaxis: { tickangle: -25, title: "Model / feature scope" }, yaxis: { ...baseLayout.yaxis, title: "Alert rate" } }, config);
+
+const rows = dashboardData.segments.map(d => `<tr><td>${d[0]}</td><td>${d[1]}</td><td>${pct(d[2])}</td></tr>`).join("");
+document.getElementById("segment-table").innerHTML = `<table><thead><tr><th>Type</th><th>Hour</th><th>Fraud rate</th></tr></thead><tbody>${rows}</tbody></table>`;
+</script>
+</body>
+</html>
