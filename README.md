@@ -1,6 +1,6 @@
 # PaySim Transaction Fraud Analysis
 
-An end-to-end analysis of simulated mobile-money transactions using EDA, SQL, leakage-aware feature engineering, imbalanced classification, threshold evaluation, and reproducible model comparison.
+An analyst-facing transaction fraud analytics and BI reporting project built on simulated mobile-money transactions. The workflow leads with SQL/DuckDB analysis, fraud patterns, risk segments and BI-ready reporting, then adds model-based review prioritization and technical evaluation.
 
 ## Project at a Glance
 
@@ -14,22 +14,11 @@ An end-to-end analysis of simulated mobile-money transactions using EDA, SQL, le
 
 ## Key Findings
 
-- Fraud is concentrated in `TRANSFER` and `CASH_OUT`; the simulated fraud rate is 2.07% in the `>=1m` amount band versus 0.14% in the `100k-1m` band, providing an operational screening signal for review prioritization.
-- The DuckDB/SQL layer is the direct analyst-facing deliverable: it answers fraud rate and amount questions by transaction type, hour, day, amount band and high-risk segment, and reports scored alert volume for review monitoring.
-- The post-transaction Random Forest reaches F1 0.9997 at an approximately 1.54% alert rate on the final chronological test; this is a strong result for this simulated PaySim setting, not evidence of performance on real banking data.
-
-## SQL Analysis
-
-The SQL layer uses DuckDB and is defined in [`sql/fraud_analysis.sql`](sql/fraud_analysis.sql). It answers questions about:
-
-- total transactions and fraud rate;
-- fraud by transaction type and fraud amount;
-- fraud by simulated hour and day;
-- fraud by amount band;
-- high-risk type/hour segments;
-- final scored alert volume.
-
-Exported tables are available under [`results/sql/`](results/sql/). Power BI-ready copies are in [`powerbi/`](powerbi/), with assembly instructions in [`docs/powerbi_dashboard_guide.md`](docs/powerbi_dashboard_guide.md). A lightweight preview is available at [`reports/dashboard.html`](reports/dashboard.html).
+- Across 6,362,620 source transactions, the source fraud prevalence is 0.12908%, so the project analyzes a highly imbalanced transaction environment. These source counts are recorded in [`results/data_summary.json`](results/data_summary.json) and [`results/sql/total_transactions.csv`](results/sql/total_transactions.csv).
+- Simulated fraud is concentrated in `TRANSFER` and `CASH_OUT`. The `>=1m` amount band has a 2.0715% simulated fraud rate versus 0.1404% in the `100k-1m` band; these are screening signals for closer review, not fraud rules or causal explanations. See [`results/sql/fraud_by_amount_band.csv`](results/sql/fraud_by_amount_band.csv) and [`docs/business_analysis.md`](docs/business_analysis.md).
+- The DuckDB/SQL layer is the direct analyst-facing deliverable: it reports transaction totals, fraud rate and fraud amount by type, simulated hour/day, amount band, high-risk type/hour segment and scored alert output, with a model/threshold alert-rate comparison for review analysis. The outputs are reusable aggregate tables for reporting and review prioritization.
+- Within PaySim, the post-transaction Random Forest strongly separates the simulated fraud/non-fraud labels, reaching F1 0.9997 at a 1.5438% alert rate on the final chronological test. This can support offline study of alert prioritization in the simulator, but it does not establish real-world banking performance.
+- Scope remains explicit: post-transaction monitoring uses new balances and residual/accounting features; pre-transaction results are a screening comparison only. Neither scope is presented as real-time prevention or pre-authorization.
 
 ## Analytical Question
 
@@ -61,6 +50,27 @@ The aggregate artifacts in this repository were generated from a local full sour
 
 Verified SQL and EDA findings show that fraud is concentrated in `TRANSFER` and `CASH_OUT`; the `>=1m` amount band has a higher simulated fraud rate than smaller bands. These are associations in a simulator, not standalone business rules or causal explanations. See [`docs/business_analysis.md`](docs/business_analysis.md).
 
+## SQL Analysis
+
+The SQL layer uses DuckDB and is defined in [`sql/fraud_analysis.sql`](sql/fraud_analysis.sql). It turns the 6,362,620-transaction source into reusable aggregate reporting views. The outputs answer analyst-facing questions before the modeling sections:
+
+| Analyst question | Verified output | Finding and restrained use |
+| --- | --- | --- |
+| What is the overall transaction and source fraud baseline? | [`results/sql/total_transactions.csv`](results/sql/total_transactions.csv) | Establishes total transactions, fraud count and source prevalence for KPI reporting. |
+| Which transaction types carry more simulated fraud activity and fraud amount? | [`results/sql/fraud_by_type.csv`](results/sql/fraud_by_type.csv) and [`results/sql/fraud_amount_by_type.csv`](results/sql/fraud_amount_by_type.csv) | Shows the concentration in `TRANSFER` and `CASH_OUT`; supports type-level review segmentation. |
+| How does simulated fraud vary by hour and day? | [`results/sql/fraud_by_hour.csv`](results/sql/fraud_by_hour.csv) and [`results/sql/fraud_by_day.csv`](results/sql/fraud_by_day.csv) | Surfaces temporal slices for exploration and monitoring review, without implying causal time effects. |
+| How does the simulated rate vary by amount band? | [`results/sql/fraud_by_amount_band.csv`](results/sql/fraud_by_amount_band.csv) | Highlights the higher `>=1m` band rate as a segment for closer investigation, not a standalone rule. |
+| Which type/hour combinations are high-risk in the simulator? | [`results/sql/high_risk_segments.csv`](results/sql/high_risk_segments.csv) | Provides a compact segment table for review prioritization and exploratory dashboarding. |
+| How many scored transactions were flagged in the SQL output? | [`results/sql/alert_volume.csv`](results/sql/alert_volume.csv) | Reports scored-output volume and alert rate; it has no model/threshold dimension, so model comparisons use the verified model artifact below. |
+
+Power BI-ready copies of these aggregate outputs are in [`powerbi/`](powerbi/). Field definitions and source mapping are in [`powerbi/data_dictionary.md`](powerbi/data_dictionary.md).
+
+## BI / Dashboard Deliverables
+
+The reporting layer contains aggregate CSVs that can be loaded into Power BI without distributing row-level PaySim data. [`docs/powerbi_dashboard_guide.md`](docs/powerbi_dashboard_guide.md) gives the dataset, axis, value, sort, tooltip and analytical question for each recommended visual. The reproducible [`scripts/build_dashboard.py`](scripts/build_dashboard.py) reads only the verified `powerbi/` CSVs and generates the [`reports/dashboard.html`](reports/dashboard.html) interactive HTML dashboard artifact. No hosted or live dashboard is claimed.
+
+The dashboard keeps the simulated-data caveat visible and includes overall fraud KPIs, fraud by type/amount band/hour/day, high-risk segments and model/threshold alert-rate comparison. A static PNG preview is not included because the current environment does not provide a reliable image-export dependency; the interactive HTML artifact remains the reproducible preview.
+
 ## Feature Engineering
 
 Two explicit feature contracts are maintained:
@@ -80,9 +90,9 @@ The test set is then evaluated once with frozen candidates and frozen validation
 
 ![Average precision on the final chronological test period](figures/model_average_precision.png)
 
-Final test results for both feature scopes:
+Final chronological test results for both feature scopes are preserved in [`results/model_comparison.csv`](results/model_comparison.csv):
 
-In this simulated setting, the post-transaction Random Forest is the practical canonical pick: it combines precision 1.0000, recall 0.9994 and F1 0.9997 with a 1.5438% alert rate. The post-transaction XGBoost result is nearly identical on F1 (0.9994) with a 1.5467% alert rate, so the comparison makes the precision/recall/alert-volume trade-off visible rather than selecting on a single score. These are simulator-specific outputs and do not generalize to real banking data.
+Within PaySim, the post-transaction Random Forest is the strongest canonical result: precision 1.0000, recall 0.9994 and F1 0.9997 at a 1.5438% alert rate. Precision and recall describe the quality and coverage of the flagged set, while alert rate is a proxy for how many scored transactions would enter a review queue; it is not a staffing or cost estimate. These simulator-specific results do not establish a real-world banking threshold or performance policy.
 
 | Feature scope | Model | ROC-AUC | Avg. Precision | Precision | Recall | F1 | Threshold | Alert rate |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
